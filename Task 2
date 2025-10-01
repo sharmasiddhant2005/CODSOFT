@@ -1,0 +1,92 @@
+import re
+import random
+
+class SimpleChatbot:
+    def __init__(self):
+        self.name = "ChatBot"
+        self.responses = {
+            'greeting': [
+                "Hello! How can I help you today?",
+                "Hi there! What can I do for you?",
+                "Hey! Nice to see you. How can I assist?"
+            ],
+            'farewell': [
+                "Goodbye! Have a great day!",
+                "See you later! Take care!",
+                "Bye! Feel free to come back if you have more questions."
+            ],
+            'thanks': [
+                "You're welcome!",
+                "Happy to help!",
+                "No problem! Is there anything else you need?"
+            ],
+            'name': [
+                f"I'm {self.name}, your friendly assistant!",
+                f"You can call me {self.name}.",
+                f"I'm {self.name}. How can I assist you today?"
+            ],
+            'help': [
+                "I can help you with greetings, tell you my name, or answer simple questions. Try asking me something!",
+                "I'm here to chat! You can ask about my name, say hello, or just have a conversation.",
+                "I'm a simple chatbot. You can greet me, ask my name, or say goodbye!"
+            ],
+            'default': [
+                "I'm not sure I understand. Can you rephrase that?",
+                "Interesting! Could you tell me more?",
+                "I see. What else would you like to know?",
+                "Sorry, I didn't get that. Could you try asking differently?"
+            ]
+        }
+        
+        # Define patterns for different types of queries
+        self.patterns = {
+            'greeting': [
+                r'.*(hello|hi|hey|good morning|good afternoon).*',
+                r'.*(how are you|how do you do).*'
+            ],
+            'farewell': [
+                r'.*(bye|goodbye|see you|see ya|farewell).*',
+                r'.*(quit|exit|stop).*'
+            ],
+            'thanks': [
+                r'.*(thank|thanks|thank you).*'
+            ],
+            'name': [
+                r'.*(what is your name|who are you|your name).*'
+            ],
+            'help': [
+                r'.*(help|what can you do|what do you do).*'
+            ]
+        }
+    
+    def get_response(self, user_input):
+        """Generate response based on user input"""
+        user_input = user_input.lower().strip()
+        
+        # Check for each pattern category
+        for category, patterns in self.patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, user_input):
+                    return random.choice(self.responses[category])
+        
+        # Default response if no pattern matches
+        return random.choice(self.responses['default'])
+    
+    def chat(self):
+        """Start the chat session"""
+        print(f"{self.name}: Hello! I'm {self.name}. Type 'quit' to exit.")
+        
+        while True:
+            user_input = input("You: ")
+            
+            if user_input.lower() in ['quit', 'exit', 'bye']:
+                print(f"{self.name}: {random.choice(self.responses['farewell'])}")
+                break
+            
+            response = self.get_response(user_input)
+            print(f"{self.name}: {response}")
+
+# Example usage
+if __name__ == "__main__":
+    chatbot = SimpleChatbot()
+    chatbot.chat()
