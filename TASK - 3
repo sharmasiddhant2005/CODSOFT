@@ -1,4 +1,4 @@
-# recommendation_system.py
+# movie_recommender.py
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -6,178 +6,343 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 
 # =============================================================================
-# 1. CONTENT-BASED FILTERING SYSTEM
+# 1. CONTENT-BASED MOVIE SUGGESTION ENGINE
 # =============================================================================
-class ContentBasedRecommender:
+class MovieContentRecommender:
     def __init__(self):
-        self.items_df = None
+        self.movies_data = None
         self.tfidf_matrix = None
         self.feature_names = None
         self.scaler = MinMaxScaler()
     
-    def create_sample_data(self):
-        """Create sample movie data with genres and features"""
-        movies_data = {
+    def generate_movie_dataset(self):
+        """Create my personal movie collection dataset"""
+        movies_collection = {
             'movie_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             'title': [
                 'The Matrix', 'Inception', 'The Dark Knight', 'Pulp Fiction',
                 'Forrest Gump', 'The Shawshank Redemption', 'The Godfather',
                 'Fight Club', 'Interstellar', 'The Social Network'
             ],
-            'genres': [
+            'categories': [
                 'Action Sci-Fi', 'Action Thriller Sci-Fi', 'Action Crime Drama',
                 'Crime Drama', 'Drama Romance', 'Drama', 'Crime Drama',
                 'Drama Thriller', 'Adventure Drama Sci-Fi', 'Biography Drama'
             ],
-            'keywords': [
+            'themes': [
                 'cyberpunk AI virtual_reality', 'dreams heist subconscious',
                 'superhero crime gotham', 'gangster nonlinear dialogue',
                 'inspirational historical simple', 'prison hope friendship',
                 'mafia family power', 'psychological rebellion anarchy',
                 'space time travel', 'technology startup facebook'
             ],
-            'rating': [8.7, 8.8, 9.0, 8.9, 8.8, 9.3, 9.2, 8.8, 8.6, 7.7]
+            'my_rating': [8.7, 8.8, 9.0, 8.9, 8.8, 9.3, 9.2, 8.8, 8.6, 7.7]
         }
         
-        self.items_df = pd.DataFrame(movies_data)
-        return self.items_df
+        self.movies_data = pd.DataFrame(movies_collection)
+        return self.movies_data
     
-    def prepare_features(self):
-        """Prepare features for content-based filtering"""
-        # Combine genres and keywords
-        self.items_df['content'] = self.items_df['genres'] + ' ' + self.items_df['keywords']
+    def build_movie_features(self):
+        """Combine categories and themes for movie analysis"""
+        self.movies_data['combined_features'] = self.movies_data['categories'] + ' ' + self.movies_data['themes']
         
-        # Create TF-IDF matrix
         tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
-        self.tfidf_matrix = tfidf.fit_transform(self.items_df['content'])
+        self.tfidf_matrix = tfidf.fit_transform(self.movies_data['combined_features'])
         self.feature_names = tfidf.get_feature_names_out()
     
-    def get_similar_items(self, item_id, n_recommendations=5):
-        """Get similar items based on content"""
+    def find_similar_movies(self, movie_id, num_suggestions=5):
+        """Find movies similar to a given movie"""
         if self.tfidf_matrix is None:
-            self.prepare_features()
+            self.build_movie_features()
         
-        # Get the index of the item
-        idx = self.items_df[self.items_df['movie_id'] == item_id].index[0]
+        movie_index = self.movies_data[self.movies_data['movie_id'] == movie_id].index[0]
         
-        # Calculate cosine similarity
-        cosine_sim = cosine_similarity(self.tfidf_matrix[idx], self.tfidf_matrix).flatten()
+        similarity_scores = cosine_similarity(self.tfidf_matrix[movie_index], self.tfidf_matrix).flatten()
         
-        # Get similar items (excluding the input item itself)
-        similar_indices = cosine_sim.argsort()[::-1][1:n_recommendations+1]
+        similar_movie_indices = similarity_scores.argsort()[::-1][1:num_suggestions+1]
         
-        recommendations = []
-        for i in similar_indices:
-            recommendations.append({
-                'movie_id': self.items_df.iloc[i]['movie_id'],
-                'title': self.items_df.iloc[i]['title'],
-                'similarity_score': cosine_sim[i]
+        suggestions = []
+        for idx in similar_movie_indices:
+            suggestions.append({
+                'movie_id': self.movies_data.iloc[idx]['movie_id'],
+                'title': self.movies_data.iloc[idx]['title'],
+                'similarity': similarity_scores[idx]
             })
         
-        return recommendations
+        return suggestions
     
-    def recommend_based_on_preferences(self, liked_genres, n_recommendations=5):
-        """Recommend items based on genre preferences"""
+    def suggest_based_on_taste(self, favorite_categories, num_suggestions=5):
+        """Suggest movies based on preferred categories"""
         if self.tfidf_matrix is None:
-            self.prepare_features()
+            self.build_movie_features()
         
-        # Create a TF-IDF vector for the preferred genres
         tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
-        tfidf.fit(self.items_df['content'])
+        tfidf.fit(self.movies_data['combined_features'])
         
-        user_profile = tfidf.transform([liked_genres])
+        user_preference_vector = tfidf.transform([favorite_categories])
         
-        # Calculate similarity between user profile and all items
-        cosine_sim = cosine_similarity(user_profile, self.tfidf_matrix).flatten()
+        similarity_to_preference = cosine_similarity(user_preference_vector, self.tfidf_matrix).flatten()
         
-        # Get top recommendations
-        top_indices = cosine_sim.argsort()[::-1][:n_recommendations]
+        top_matches = similarity_to_preference.argsort()[::-1][:num_suggestions]
         
         recommendations = []
-        for i in top_indices:
+        for idx in top_matches:
             recommendations.append({
-                'movie_id': self.items_df.iloc[i]['movie_id'],
-                'title': self.items_df.iloc[i]['title'],
-                'genres': self.items_df.iloc[i]['genres'],
-                'match_score': cosine_sim[i]
+                'movie_id': self.movies_data.iloc[idx]['movie_id'],
+                'title': self.movies_data.iloc[idx]['title'],
+                'categories': self.movies_data.iloc[idx]['categories'],
+                'preference_match': similarity_to_preference[idx]
             })
         
         return recommendations
 
 # =============================================================================
-# 2. COLLABORATIVE FILTERING SYSTEM
+# 2. USER-BASED MOVIE RECOMMENDATION
 # =============================================================================
-class CollaborativeFilteringRecommender:
+class UserBasedMovieRecommender:
     def __init__(self):
-        self.ratings_df = Nonea
-        self.user_item_matrix = None
-        self.similarity_matrix = None
+        self.ratings_data = None
+        self.user_movie_matrix = None
+        self.user_similarities = None
     
-    def create_sample_ratings(self):
-        """Create sample user ratings data"""
-        # User ratings data (user_id, movie_id, rating)
-        ratings_data = {
+    def create_friend_ratings(self):
+        """Create ratings from me and my friends"""
+        friend_ratings = {
             'user_id': [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4],
             'movie_id': [1, 2, 3, 4, 5, 2, 3, 6, 7, 8, 1, 3, 5, 9, 10, 4, 6, 7, 8, 9],
             'rating': [5, 4, 5, 3, 4, 4, 5, 5, 4, 3, 5, 4, 4, 5, 3, 4, 5, 4, 3, 4]
         }
         
-        self.ratings_df = pd.DataFrame(ratings_data)
-        return self.ratings_df
+        self.ratings_data = pd.DataFrame(friend_ratings)
+        return self.ratings_data
     
-    def create_user_item_matrix(self):
-        """Create user-item rating matrix"""
-        self.user_item_matrix = self.ratings_df.pivot_table(
+    def build_user_movie_matrix(self):
+        """Create matrix showing user ratings for movies"""
+        self.user_movie_matrix = self.ratings_data.pivot_table(
             index='user_id', 
             columns='movie_id', 
             values='rating'
         ).fillna(0)
-        return self.user_item_matrix
+        return self.user_movie_matrix
     
-    def calculate_user_similarity(self):
-        """Calculate user similarity matrix"""
-        if self.user_item_matrix is None:
-            self.create_user_item_matrix()
+    def compute_user_similarities(self):
+        """Calculate how similar users are based on their ratings"""
+        if self.user_movie_matrix is None:
+            self.build_user_movie_matrix()
         
-        # Calculate cosine similarity between users
-        self.similarity_matrix = cosine_similarity(self.user_item_matrix)
-        return self.similarity_matrix
+        self.user_similarities = cosine_similarity(self.user_movie_matrix)
+        return self.user_similarities
     
-    def recommend_for_user(self, user_id, n_recommendations=5):
-        """Generate recommendations for a user using user-based collaborative filtering"""
-        if self.similarity_matrix is None:
-            self.calculate_user_similarity()
+    def recommend_for_user(self, user_id, num_recommendations=5):
+        """Suggest movies for a specific user"""
+        if self.user_similarities is None:
+            self.compute_user_similarities()
         
-        # Get the target user's index
-        user_idx = list(self.user_item_matrix.index).index(user_id)
+        user_index = list(self.user_movie_matrix.index).index(user_id)
         
-        # Get similar users
-        user_similarities = self.similarity_matrix[user_idx]
+        similarity_with_others = self.user_similarities[user_index]
         
-        # Get items the user hasn't rated yet
-        user_ratings = self.user_item_matrix.iloc[user_idx]
-        unrated_items = user_ratings[user_ratings == 0].index
+        user_ratings = self.user_movie_matrix.iloc[user_index]
+        unwatched_movies = user_ratings[user_ratings == 0].index
         
-        # Calculate predicted ratings for unrated items
-        predictions = {}
+        predicted_ratings = {}
         
-        for item in unrated_items:
-            weighted_sum = 0
-            similarity_sum = 0
+        for movie in unwatched_movies:
+            total_weighted_rating = 0
+            total_similarity = 0
             
-            for other_user_idx, similarity in enumerate(user_similarities):
-                if similarity > 0 and other_user_idx != user_idx:
-                    other_user_rating = self.user_item_matrix.iloc[other_user_idx][item]
+            for other_user_idx, similarity_score in enumerate(similarity_with_others):
+                if similarity_score > 0 and other_user_idx != user_index:
+                    other_user_rating = self.user_movie_matrix.iloc[other_user_idx][movie]
                     if other_user_rating > 0:
-                        weighted_sum += similarity * other_user_rating
-                        similarity_sum += similarity
+                        total_weighted_rating += similarity_score * other_user_rating
+                        total_similarity += similarity_score
             
-            if similarity_sum > 0:
-                predicted_rating = weighted_sum / similarity_sum
-                predictions[item] = predicted_rating
+            if total_similarity > 0:
+                predicted_rating = total_weighted_rating / total_similarity
+                predicted_ratings[movie] = predicted_rating
         
-        # Get top recommendations
-        recommendations = sorted(predictions.items(), key=lambda x: x[1], reverse=True)[:n_recommendations]
+        top_suggestions = sorted(predicted_ratings.items(), key=lambda x: x[1], reverse=True)[:num_recommendations]
         
-        return recommendations
+        return top_suggestions
 
+# =============================================================================
+# 3. COMBINED RECOMMENDATION APPROACH
+# =============================================================================
+class CombinedMovieRecommender:
+    def __init__(self):
+        self.content_engine = MovieContentRecommender()
+        self.user_engine = UserBasedMovieRecommender()
+        self.movies_dataset = None
+        
+    def setup_data(self):
+        """Initialize both recommendation engines with data"""
+        self.movies_dataset = self.content_engine.generate_movie_dataset()
+        self.user_engine.create_friend_ratings()
+        self.content_engine.build_movie_features()
+        self.user_engine.build_user_movie_matrix()
+        self.user_engine.compute_user_similarities()
+    
+    def get_combined_recommendations(self, user_id=None, preferred_categories=None, num_suggestions=5):
+        """Generate recommendations using both methods"""
+        suggestions = []
+        
+        if preferred_categories:
+            content_suggestions = self.content_engine.suggest_based_on_taste(
+                preferred_categories, num_suggestions
+            )
+            for suggestion in content_suggestions:
+                suggestions.append({
+                    'movie_id': suggestion['movie_id'],
+                    'title': suggestion['title'],
+                    'method': 'content_based',
+                    'score': suggestion['preference_match']
+                })
+        
+        if user_id:
+            try:
+                user_suggestions = self.user_engine.recommend_for_user(user_id, num_suggestions)
+                for movie_id, rating_score in user_suggestions:
+                    movie_title = self.movies_dataset[self.movies_dataset['movie_id'] == movie_id]['title'].values[0]
+                    suggestions.append({
+                        'movie_id': movie_id,
+                        'title': movie_title,
+                        'method': 'user_based',
+                        'score': rating_score
+                    })
+            except:
+                print(f"User {user_id} not found in our friends list")
+        
+        seen_movies = set()
+        unique_suggestions = []
+        for suggestion in suggestions:
+            if suggestion['movie_id'] not in seen_movies:
+                seen_movies.add(suggestion['movie_id'])
+                unique_suggestions.append(suggestion)
+        
+        return sorted(unique_suggestions, key=lambda x: x['score'], reverse=True)[:num_suggestions]
+
+# =============================================================================
+# 4. SHOWCASE THE SYSTEM
+# =============================================================================
+def showcase_recommendation_system():
+    """Show how the movie recommendation system works"""
+    print("=" * 60)
+    print("MOVIE RECOMMENDATION SYSTEM SHOWCASE")
+    print("=" * 60)
+    
+    combined_recommender = CombinedMovieRecommender()
+    combined_recommender.setup_data()
+    
+    print("\n1. CONTENT-BASED SUGGESTIONS")
+    print("-" * 30)
+    
+    content_recommender = combined_recommender.content_engine
+    
+    print("\nMovies similar to 'The Matrix' (movie_id: 1):")
+    similar_films = content_recommender.find_similar_movies(1, 3)
+    for film in similar_films:
+        print(f"  - {film['title']} (Similarity: {film['similarity']:.3f})")
+    
+    print("\nSuggestions for someone who enjoys 'Action Sci-Fi':")
+    category_suggestions = content_recommender.suggest_based_on_taste("Action Sci-Fi", 3)
+    for suggestion in category_suggestions:
+        print(f"  - {suggestion['title']} ({suggestion['categories']}) - Match: {suggestion['preference_match']:.3f}")
+    
+    print("\n2. USER-BASED SUGGESTIONS")
+    print("-" * 30)
+    
+    user_recommender = combined_recommender.user_engine
+    print("\nMovie suggestions for User 1:")
+    user_suggestions = user_recommender.recommend_for_user(1, 3)
+    for movie_id, predicted_rating in user_suggestions:
+        movie_title = content_recommender.movies_data[content_recommender.movies_data['movie_id'] == movie_id]['title'].values[0]
+        print(f"  - {movie_title} (Expected Rating: {predicted_rating:.3f})")
+    
+    print("\n3. COMBINED RECOMMENDATIONS")
+    print("-" * 30)
+    
+    print("\nCombined suggestions for User 1 who likes 'Drama Crime':")
+    combined_suggestions = combined_recommender.get_combined_recommendations(
+        user_id=1, 
+        preferred_categories="Drama Crime", 
+        num_suggestions=5
+    )
+    
+    for i, suggestion in enumerate(combined_suggestions, 1):
+        print(f"  {i}. {suggestion['title']} ({suggestion['method']}) - Score: {suggestion['score']:.3f}")
+    
+    print("\n4. MOVIE COLLECTION")
+    print("-" * 30)
+    print("\nMovies in my database:")
+    for _, movie in content_recommender.movies_data.iterrows():
+        print(f"  {movie['movie_id']}: {movie['title']} - {movie['categories']}")
+    
+    print("\nSample friend ratings:")
+    print(user_recommender.ratings_data.head(10))
+
+# =============================================================================
+# 5. SYSTEM PERFORMANCE CHECK
+# =============================================================================
+class SuggestionQualityChecker:
+    def __init__(self, recommender):
+        self.recommender = recommender
+    
+    def calculate_precision(self, actual_likes, predicted_suggestions, top_k=5):
+        """Calculate how accurate suggestions are"""
+        if len(predicted_suggestions) > top_k:
+            predicted_suggestions = predicted_suggestions[:top_k]
+        
+        actual_set = set(actual_likes)
+        predicted_set = set(predicted_suggestions)
+        
+        correct_predictions = len(actual_set.intersection(predicted_set))
+        return correct_predictions / len(predicted_suggestions) if predicted_suggestions else 0
+    
+    def check_suggestion_quality(self, test_cases, top_k=5):
+        """Evaluate suggestion quality"""
+        precision_scores = []
+        
+        for user_id, liked_movies in test_cases.items():
+            try:
+                suggestions = self.recommender.get_combined_recommendations(
+                    user_id=user_id, 
+                    num_suggestions=top_k
+                )
+                suggested_movies = [suggestion['movie_id'] for suggestion in suggestions]
+                
+                precision_score = self.calculate_precision(liked_movies, suggested_movies, top_k)
+                precision_scores.append(precision_score)
+            except:
+                continue
+        
+        return np.mean(precision_scores) if precision_scores else 0
+
+def run_quality_check():
+    combined_recommender = CombinedMovieRecommender()
+    combined_recommender.setup_data()
+    
+    quality_checker = SuggestionQualityChecker(combined_recommender)
+    
+    test_cases = {
+        1: [6, 7],
+        2: [1, 9],
+    }
+    
+    average_precision = quality_checker.check_suggestion_quality(test_cases, 3)
+    print(f"\nAverage Precision for Top 3 Suggestions: {average_precision:.3f}")
+
+# =============================================================================
+# 6. RUN THE SYSTEM
+# =============================================================================
+if __name__ == "__main__":
+    showcase_recommendation_system()
+    
+    print("\n" + "=" * 60)
+    print("SYSTEM PERFORMANCE CHECK")
+    print("=" * 60)
+    run_quality_check()
+    
+    print("\n" + "=" * 60)
+    print("SHOWCASE COMPLETED!")
+    print("=" * 60)
