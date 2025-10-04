@@ -1,92 +1,193 @@
 import re
 import random
+import datetime
 
-class SimpleChatbot:
+class MyChatProgram:
     def __init__(self):
-        self.name = "ChatBot"
-        self.responses = {
-            'greeting': [
-                "Hello! How can I help you today?",
-                "Hi there! What can I do for you?",
-                "Hey! Nice to see you. How can I assist?"
+        self.bot_name = "TalkBuddy"
+        self.conversation_responses = {
+            'hello': [
+                "Hey! Good to see you. What's up?",
+                "Hi! How's your day going?",
+                "Hello there! What can I do for you?"
             ],
-            'farewell': [
-                "Goodbye! Have a great day!",
-                "See you later! Take care!",
-                "Bye! Feel free to come back if you have more questions."
+            'goodbye': [
+                "Catch you later!",
+                "See you around!",
+                "Bye for now!"
             ],
-            'thanks': [
-                "You're welcome!",
-                "Happy to help!",
-                "No problem! Is there anything else you need?"
+            'appreciation': [
+                "No problem!",
+                "Glad I could help!",
+                "You got it!"
             ],
-            'name': [
-                f"I'm {self.name}, your friendly assistant!",
-                f"You can call me {self.name}.",
-                f"I'm {self.name}. How can I assist you today?"
+            'identity': [
+                f"I'm {self.bot_name}, your chat companion!",
+                f"Call me {self.bot_name}. Nice to meet you!",
+                f"They call me {self.bot_name}!"
             ],
-            'help': [
-                "I can help you with greetings, tell you my name, or answer simple questions. Try asking me something!",
-                "I'm here to chat! You can ask about my name, say hello, or just have a conversation.",
-                "I'm a simple chatbot. You can greet me, ask my name, or say goodbye!"
+            'current_time': [
+                "Checking the clock for you...",
+                "Here's what time it is right now:"
             ],
-            'default': [
-                "I'm not sure I understand. Can you rephrase that?",
-                "Interesting! Could you tell me more?",
-                "I see. What else would you like to know?",
-                "Sorry, I didn't get that. Could you try asking differently?"
-            ]
-        }
-        
-        # Define patterns for different types of queries
-        self.patterns = {
-            'greeting': [
-                r'.*(hello|hi|hey|good morning|good afternoon).*',
-                r'.*(how are you|how do you do).*'
+            'support': [
+                "I can chat about time, tell jokes, or just keep you company!",
+                "Try asking me what time it is, or if you want to hear a joke!",
+                "I'm pretty good at conversation. What would you like to talk about?"
             ],
-            'farewell': [
-                r'.*(bye|goodbye|see you|see ya|farewell).*',
-                r'.*(quit|exit|stop).*'
+            'climate': [
+                "I don't have live weather updates, but I hope it's beautiful outside!",
+                "You might want to peek out the window for weather details.",
+                "Weather isn't really my specialty - I'm better at chatting!"
             ],
-            'thanks': [
-                r'.*(thank|thanks|thank you).*'
+            'humor': [
+                "Why did the math book look so sad? It had too many problems!",
+                "What do you call a sleeping dinosaur? A dino-snore!",
+                "Why did the coffee file a police report? It got mugged!"
             ],
-            'name': [
-                r'.*(what is your name|who are you|your name).*'
-            ],
-            'help': [
-                r'.*(help|what can you do|what do you do).*'
+            'general': [
+                "That's cool! Tell me more about that.",
+                "Interesting! What else is on your mind?",
+                "Hmm, could you say that another way?",
+                "I'm still figuring things out. Could you explain differently?"
             ]
         }
     
-    def get_response(self, user_input):
-        """Generate response based on user input"""
-        user_input = user_input.lower().strip()
+    def generate_reply(self, user_message):
+        """Figure out what to say based on what the user typed"""
+        user_message = user_message.lower().strip()
+
+        if self._check_for_words(user_message, ['hello', 'hi', 'hey', 'yo']):
+            return random.choice(self.conversation_responses['hello'])
         
-        # Check for each pattern category
-        for category, patterns in self.patterns.items():
-            for pattern in patterns:
-                if re.search(pattern, user_input):
-                    return random.choice(self.responses[category])
+        elif self._check_for_words(user_message, ['bye', 'goodbye', 'see ya', 'quit', 'exit']):
+            return random.choice(self.conversation_responses['goodbye'])
         
-        # Default response if no pattern matches
-        return random.choice(self.responses['default'])
+        elif self._check_for_words(user_message, ['thank', 'thanks', 'appreciate']):
+            return random.choice(self.conversation_responses['appreciation'])
+        
+        elif self._check_for_words(user_message, ['who are you', 'whats your name', 'your name']):
+            return random.choice(self.conversation_responses['identity'])
+        
+        elif self._check_for_words(user_message, ['time', 'what time', 'current time']):
+            now = datetime.datetime.now().strftime("%I:%M %p on %B %d")
+            return f"{random.choice(self.conversation_responses['current_time'])} It's {now}"
+        
+        elif self._check_for_words(user_message, ['help', 'what can you do', 'what do you do']):
+            return random.choice(self.conversation_responses['support'])
+        
+        elif self._check_for_words(user_message, ['weather', 'temperature', 'forecast']):
+            return random.choice(self.conversation_responses['climate'])
+        
+        elif self._check_for_words(user_message, ['joke', 'funny', 'make me laugh']):
+            return random.choice(self.conversation_responses['humor'])
+        
+        elif self._check_for_words(user_message, ['how are you', 'how do you feel']):
+            return "I'm just some code running on a computer, but I'm working fine! How about you?"
+        
+        else:
+            return random.choice(self.conversation_responses['general'])
     
-    def chat(self):
-        """Start the chat session"""
-        print(f"{self.name}: Hello! I'm {self.name}. Type 'quit' to exit.")
+    def _check_for_words(self, text, word_list):
+        """See if the text contains any of the words we're looking for"""
+        for word in word_list:
+            if re.search(r'\b' + re.escape(word) + r'\b', text):
+                return True
+        return False
+    
+    def start_chatting(self):
+        """Get the conversation going"""
+        print(f"{self.bot_name}: Hey! I'm your chat buddy. Type 'quit' whenever you want to stop talking.")
         
         while True:
-            user_input = input("You: ")
-            
-            if user_input.lower() in ['quit', 'exit', 'bye']:
-                print(f"{self.name}: {random.choice(self.responses['farewell'])}")
+            try:
+                user_message = input("You: ")
+                
+                if user_message.lower() in ['quit', 'exit', 'bye']:
+                    print(f"{self.bot_name}: {random.choice(self.conversation_responses['goodbye'])}")
+                    break
+                
+                reply = self.generate_reply(user_message)
+                print(f"{self.bot_name}: {reply}")
+                
+            except KeyboardInterrupt:
+                print(f"\n{self.bot_name}: Okay, stopping now!")
                 break
-            
-            response = self.get_response(user_input)
-            print(f"{self.name}: {response}")
+            except Exception:
+                print(f"{self.bot_name}: Whoops, something went wrong. Let's try that again.")
 
-# Example usage
+class SmarterChatProgram(MyChatProgram):
+    def __init__(self):
+        super().__init__()
+        self.chat_memory = {}
+    
+    def generate_reply(self, user_message):
+        """Better response handling with some basic pattern recognition"""
+        user_message = user_message.lower().strip()
+        
+        reply = self._smarter_response_logic(user_message)
+        return reply
+    
+    def _smarter_response_logic(self, text):
+        """A bit more clever about understanding what people say"""
+        
+        if re.search(r'(hi|hello|hey)\s+(\w+)', text):
+            name_found = re.search(r'(hi|hello|hey)\s+(\w+)', text)
+            return f"Hey {name_found.group(2).title()}! Good to meet you!"
+        
+        elif re.search(r'how\s+are\s+you', text):
+            return "I'm just a program, but I'm running smoothly! How are things with you?"
+        
+        elif re.search(r'i feel (\w+)', text) or re.search(r"i'm (\w+)", text):
+            emotion_match = re.search(r'i feel (\w+)|i\'m (\w+)', text)
+            emotion = emotion_match.group(1) or emotion_match.group(2)
+            return f"I hear you're feeling {emotion}. Want to talk about it?"
+        
+        elif re.search(r'my name is (\w+)', text):
+            name_match = re.search(r'my name is (\w+)', text)
+            return f"Nice to meet you, {name_match.group(1).title()}!"
+        
+        elif re.search(r'i love (\w+)', text):
+            thing_match = re.search(r'i love (\w+)', text)
+            return f"That's awesome that you love {thing_match.group(1)}! What do you like about it?"
+        
+        return super().generate_reply(text)
+
+def try_out_chat_program():
+    """Test the chat program with different messages"""
+    chat_program = SmarterChatProgram()
+    
+    test_messages = [
+        "hello",
+        "what's your name?",
+        "what time is it?",
+        "tell me a joke",
+        "how are you?",
+        "what is programming?",
+        "I feel excited today",
+        "hello Sarah",
+        "thank you",
+        "what's the weather like?",
+        "help me",
+        "my name is Alex",
+        "I love pizza",
+        "goodbye"
+    ]
+    
+    print("Trying out the chat program:\n")
+    for message in test_messages:
+        response = chat_program.generate_reply(message)
+        print(f"You: {message}")
+        print(f"Buddy: {response}\n")
+
 if __name__ == "__main__":
-    chatbot = SimpleChatbot()
-    chatbot.chat()
+    # Run the tests
+    try_out_chat_program()
+    
+    # Start actual conversation
+    print("\n" + "="*50)
+    print("Time for a real conversation!")
+    print("="*50)
+    
+    my_chat = SmarterChatProgram()
+    my_chat.start_chatting()
