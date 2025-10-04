@@ -5,9 +5,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 
-# =============================================================================
+# ============================================================================
 # 1. CONTENT-BASED MOVIE SUGGESTION ENGINE
-# =============================================================================
+# ============================================================================
 class MovieContentRecommender:
     def __init__(self):
         self.movies_data = None
